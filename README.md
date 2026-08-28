@@ -5,7 +5,7 @@
 # XTND | MCP | ONE
 ### Official Model Context Protocol (MCP) Server for one.com Mail
 
-[![npm version](https://img.shields.io/npm/v/@xtnd/mcp-one.svg?color=blue)](https://www.npmjs.com/package/@xtnd/mcp-one)
+[![npm version](https://img.shields.io/npm/v/@xtnd-dynamics/mcp-one.svg?color=blue)](https://www.npmjs.com/package/@xtnd-dynamics/mcp-one)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Smithery Compatible](https://img.shields.io/badge/Smithery-Compatible-orange.svg)](https://smithery.ai)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-f38020.svg?logo=cloudflare)](https://workers.cloudflare.com)
@@ -44,7 +44,7 @@ Add the following to your `claude_desktop_config.json`:
   "mcpServers": {
     "XTND | MCP | ONE": {
       "command": "npx",
-      "args": ["-y", "@xtnd/mcp-one"],
+      "args": ["-y", "@xtnd-dynamics/mcp-one"],
       "env": {
         "ONECOM_EMAIL": "user@yourdomain.com",
         "ONECOM_PASSWORD": "your_mailbox_password"
@@ -64,7 +64,7 @@ Add the following to your `claude_desktop_config.json`:
 Install automatically for Claude Desktop using the [Smithery](https://smithery.ai) CLI:
 
 ```bash
-npx -y @smithery/cli install @xtnd/mcp-one --client claude
+npx -y @smithery/cli install @xtnd-dynamics/mcp-one --client claude
 ```
 
 ---
@@ -100,7 +100,7 @@ In your Custom GPT configuration, add an **Action** pointing to the OpenAPI spec
 
 ## 🛠️ Available MCP Tools
 
-`@xtnd/mcp-one` provides 15 specialized tools across the entire mail management lifecycle:
+`@xtnd-dynamics/mcp-one` provides 15 specialized tools across the entire mail management lifecycle:
 
 | Tool Name | Parameters | Description |
 |---|---|---|
@@ -131,7 +131,7 @@ In your Custom GPT configuration, add an **Action** pointing to the OpenAPI spec
              │  JSON-RPC (stdio or HTTP/SSE)
              ▼
 ┌─────────────────────────────────────────────────────────┐
-│ XTND | MCP | ONE (@xtnd/mcp-one)                        │
+│ XTND | MCP | ONE (@xtnd-dynamics/mcp-one)                        │
 │                                                         │
 │  [HTML-to-Markdown Optimizer] ── Token Budget Pruner    │
 │  [MIME Parser & Builder]     ── RFC 5322 & RFC 2045     │
@@ -151,7 +151,7 @@ In your Custom GPT configuration, add an **Action** pointing to the OpenAPI spec
 
 * **Zero Credential Logging**: Mailbox passwords are never logged, buffered to disk, or retained across sessions.
 * **Direct Encrypted Transport**: All IMAP communication strictly uses implicit SSL/TLS on port 993 (`imap.one.com`), and all SMTP communication strictly uses implicit SSL/TLS on port 465 (`send.one.com`).
-* **Local Isolation**: In Local Stdio mode (`npx @xtnd/mcp-one`), credentials remain 100% on your local machine and never touch any intermediate server.
+* **Local Isolation**: In Local Stdio mode (`npx @xtnd-dynamics/mcp-one`), credentials remain 100% on your local machine and never touch any intermediate server.
 
 ---
 
