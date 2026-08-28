@@ -32,7 +32,7 @@
 
 ## 📦 Installation & Setup
 
-### Option 1: Claude Desktop (Direct from GitHub — Recommended)
+### Option 1: Claude Desktop (NPM Package — Recommended)
 
 Add the following to your `claude_desktop_config.json`:
 
@@ -44,7 +44,7 @@ Add the following to your `claude_desktop_config.json`:
   "mcpServers": {
     "XTND | MCP | ONE": {
       "command": "npx",
-      "args": ["-y", "github:XTND-DYNAMICS/xtnd-mcp-one"],
+      "args": ["-y", "@xtnd-dynamics/mcp-one"],
       "env": {
         "ONECOM_EMAIL": "user@yourdomain.com",
         "ONECOM_PASSWORD": "your_mailbox_password"
@@ -64,7 +64,7 @@ Add the following to your `claude_desktop_config.json`:
 Install automatically for Claude Desktop using the [Smithery](https://smithery.ai) CLI:
 
 ```bash
-npx -y @smithery/cli install XTND-DYNAMICS/xtnd-mcp-one --client claude
+npx -y @smithery/cli install @xtnd-dynamics/mcp-one --client claude
 ```
 
 ---

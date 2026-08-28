@@ -32,4 +32,4 @@ startCommand:
   command: npx
   args:
     - -y
-    - "github:XTND-DYNAMICS/xtnd-mcp-one"
+    - "@xtnd-dynamics/mcp-one"
