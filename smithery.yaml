@@ -4,32 +4,51 @@ startCommand:
   configSchema:
     type: object
     required:
-      - ONECOM_EMAIL
-      - ONECOM_PASSWORD
+      - onecomEmail
+      - onecomPassword
     properties:
-      ONECOM_EMAIL:
+      onecomEmail:
         type: string
-        description: Your full one.com email address (e.g. user@yourdomain.com)
-      ONECOM_PASSWORD:
+        title: "One.com Email Address"
+        description: "Your full one.com email address (e.g. user@yourdomain.com)"
+      onecomPassword:
         type: string
-        description: Your one.com mailbox password
-      ONECOM_IMAP_HOST:
+        title: "One.com Mailbox Password"
+        description: "Your one.com mailbox password"
+        format: password
+      onecomImapHost:
         type: string
-        default: imap.one.com
-        description: Inbound IMAP server host (default: imap.one.com)
-      ONECOM_IMAP_PORT:
+        title: "IMAP Host"
+        default: "imap.one.com"
+        description: "Inbound IMAP server host (default: imap.one.com)"
+      onecomImapPort:
         type: number
+        title: "IMAP Port"
         default: 993
-        description: Inbound IMAP port (default: 993 implicit TLS)
-      ONECOM_SMTP_HOST:
+        description: "Inbound IMAP port (default: 993 implicit TLS)"
+      onecomSmtpHost:
         type: string
-        default: send.one.com
-        description: Outbound SMTP server host (default: send.one.com)
-      ONECOM_SMTP_PORT:
+        title: "SMTP Host"
+        default: "send.one.com"
+        description: "Outbound SMTP server host (default: send.one.com)"
+      onecomSmtpPort:
         type: number
+        title: "SMTP Port"
         default: 465
-        description: Outbound SMTP port (default: 465 implicit TLS)
-  command: npx
-  args:
-    - -y
-    - "@xtnd-dynamics/mcp-one"
+        description: "Outbound SMTP port (default: 465 implicit TLS)"
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', '@xtnd-dynamics/mcp-one'],
+      env: {
+        ONECOM_EMAIL: config.onecomEmail,
+        ONECOM_PASSWORD: config.onecomPassword,
+        ONECOM_IMAP_HOST: config.onecomImapHost || 'imap.one.com',
+        ONECOM_IMAP_PORT: String(config.onecomImapPort || 993),
+        ONECOM_SMTP_HOST: config.onecomSmtpHost || 'send.one.com',
+        ONECOM_SMTP_PORT: String(config.onecomSmtpPort || 465)
+      }
+    })
+  exampleConfig:
+    onecomEmail: "user@yourdomain.com"
+    onecomPassword: "your_password_here"
