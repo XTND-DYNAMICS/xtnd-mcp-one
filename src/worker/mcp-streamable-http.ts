@@ -86,8 +86,26 @@ export async function handleMcpStreamableHttp(
             capabilities: {
               tools: { listChanged: false },
               prompts: { listChanged: false },
+              resources: { listChanged: false },
             },
             serverInfo: SERVER_INFO,
+            configSchema: {
+              type: 'object',
+              required: ['onecomEmail', 'onecomPassword'],
+              properties: {
+                onecomEmail: {
+                  type: 'string',
+                  title: 'One.com Email Address',
+                  description: 'Your full one.com email address (e.g. user@yourdomain.com)',
+                },
+                onecomPassword: {
+                  type: 'string',
+                  title: 'One.com Mailbox Password',
+                  description: 'Your one.com mailbox password',
+                  format: 'password',
+                },
+              },
+            },
           },
         }),
         { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
@@ -98,6 +116,168 @@ export async function handleMcpStreamableHttp(
     if (method === 'ping') {
       return new Response(
         JSON.stringify({ jsonrpc: '2.0', id, result: {} }),
+        { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
+    }
+
+    // Method: resources/list
+    if (method === 'resources/list' || method === 'resources/templates/list') {
+      return new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id,
+          result: {
+            resources: [
+              {
+                uri: 'one://folders',
+                name: 'Mailbox Folders',
+                description: 'Live catalog of all mailbox folders with real-time total and unread message counts.',
+                mimeType: 'application/json',
+              },
+              {
+                uri: 'one://status',
+                name: 'Gateway Status',
+                description: 'Connection state and active mailbox capabilities for one.com gateway.',
+                mimeType: 'application/json',
+              },
+              {
+                uri: 'one://templates/meeting-followup',
+                name: 'Meeting Followup Template',
+                description: 'Standard template for professional post-meeting summaries and action items.',
+                mimeType: 'text/markdown',
+              },
+              {
+                uri: 'one://templates/out-of-office',
+                name: 'Out of Office Template',
+                description: 'Standard template for out-of-office auto-responses.',
+                mimeType: 'text/markdown',
+              },
+            ],
+          },
+        }),
+        { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
+    }
+
+    // Method: resources/read
+    if (method === 'resources/read') {
+      const uri = params?.uri;
+      if (uri === 'one://status') {
+        return new Response(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id,
+            result: {
+              contents: [
+                {
+                  uri: 'one://status',
+                  mimeType: 'application/json',
+                  text: JSON.stringify({
+                    service: '@xtnd-dynamics/mcp-one',
+                    version: '0.1.3',
+                    protocolVersion: '2024-11-05',
+                    imap: { host: 'imap.one.com', port: 993, tls: true },
+                    smtp: { host: 'send.one.com', port: 465, tls: true },
+                    toolsCount: 15,
+                    promptsCount: 4,
+                    resourcesCount: 4,
+                  }),
+                },
+              ],
+            },
+          }),
+          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        );
+      }
+
+      if (uri === 'one://templates/meeting-followup') {
+        return new Response(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id,
+            result: {
+              contents: [
+                {
+                  uri: 'one://templates/meeting-followup',
+                  mimeType: 'text/markdown',
+                  text: `# Meeting Summary: [Topic]\n\n**Date:** [Date]\n**Attendees:** [Names]\n\n### Key Discussion Points\n- [Point 1]\n- [Point 2]\n\n### Action Items\n- [ ] **[Owner]**: [Task] (Due: [Date])\n`,
+                },
+              ],
+            },
+          }),
+          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        );
+      }
+
+      if (uri === 'one://templates/out-of-office') {
+        return new Response(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id,
+            result: {
+              contents: [
+                {
+                  uri: 'one://templates/out-of-office',
+                  mimeType: 'text/markdown',
+                  text: `Thank you for your message. I am out of the office until [Date]. For urgent inquiries, please contact [Colleague Name].`,
+                },
+              ],
+            },
+          }),
+          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        );
+      }
+
+      if (uri === 'one://folders') {
+        const credentials = extractCredentialsFromRequest(request, env);
+        if (!credentials.email || !credentials.password) {
+          return new Response(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              id,
+              error: { code: -32602, message: 'Authentication required for dynamic resource one://folders' },
+            }),
+            { status: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+          );
+        }
+        const client = new OneMailClient(credentials);
+        const folders = await client.listFolders();
+        return new Response(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id,
+            result: {
+              contents: [
+                {
+                  uri: 'one://folders',
+                  mimeType: 'application/json',
+                  text: JSON.stringify({ count: folders.length, folders }, null, 2),
+                },
+              ],
+            },
+          }),
+          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id,
+          error: { code: -32602, message: `Resource '${uri}' not found` },
+        }),
+        { status: 404, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+      );
+    }
+
+    // Method: ai.smithery/events/list or triggers/list
+    if (method === 'ai.smithery/events/list' || method === 'events/list' || method === 'triggers/list') {
+      return new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id,
+          result: { events: [], triggers: [] },
+        }),
         { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
       );
     }
@@ -125,14 +305,46 @@ export async function handleMcpStreamableHttp(
             prompts: [
               {
                 name: 'triage-inbox',
-                description: 'Triage and summarize recent emails in your INBOX.',
+                description: 'Inspect recent unread emails, prioritize into categories, and recommend triage actions.',
                 arguments: [
                   {
                     name: 'limit',
-                    description: 'Number of recent emails to review (default: 10)',
+                    description: 'Maximum number of unread emails to inspect (default: 10)',
                     required: false,
                   },
                 ],
+              },
+              {
+                name: 'draft-reply',
+                description: 'Analyze an email thread and draft a professional, contextual reply.',
+                arguments: [
+                  {
+                    name: 'uid',
+                    description: 'The UID of the email to reply to',
+                    required: true,
+                  },
+                  {
+                    name: 'tone',
+                    description: 'Tone of the reply: professional, friendly, concise, assertive (default: professional)',
+                    required: false,
+                  },
+                ],
+              },
+              {
+                name: 'clean-inbox',
+                description: 'Detect marketing newsletters, automated alerts, and clutter, offering bulk cleanup actions.',
+                arguments: [
+                  {
+                    name: 'folder',
+                    description: 'Folder to scan (default: INBOX)',
+                    required: false,
+                  },
+                ],
+              },
+              {
+                name: 'executive-briefing',
+                description: 'Generate a high-density executive summary of all emails received today with action item tracker.',
+                arguments: [],
               },
             ],
           },

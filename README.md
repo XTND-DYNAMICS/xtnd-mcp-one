@@ -1,19 +1,24 @@
 <div align="center">
 
-![XTND | MCP | ONE](assets/banner.jpg)
+<img src="assets/icon.svg" width="120" height="120" alt="XTND | MCP | ONE Icon" />
 
-# XTND | MCP | ONE
-### Official Model Context Protocol (MCP) Server for one.com Mail
+# 📬 XTND | MCP | ONE
+### The Premier Model Context Protocol (MCP) Server for one.com Mail Infrastructure
 
-[![npm version](https://img.shields.io/npm/v/@xtnd-dynamics/mcp-one.svg?color=blue)](https://www.npmjs.com/package/@xtnd-dynamics/mcp-one)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Smithery Compatible](https://img.shields.io/badge/Smithery-Compatible-orange.svg)](https://smithery.ai)
-[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-f38020.svg?logo=cloudflare)](https://workers.cloudflare.com)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6.svg?logo=typescript)](https://www.typescriptlang.org)
+[![npm version](https://img.shields.io/npm/v/@xtnd-dynamics/mcp-one.svg?color=blue&style=flat-square)](https://www.npmjs.com/package/@xtnd-dynamics/mcp-one)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Smithery Compatible](https://img.shields.io/badge/Smithery-Registry-orange.svg?style=flat-square)](https://smithery.ai/servers/xtnd/mcp-one)
+[![MCP Specification](https://img.shields.io/badge/MCP%20Spec-2024--11--05-8A2BE2.svg?style=flat-square)](https://modelcontextprotocol.io)
+[![Cloudflare Edge](https://img.shields.io/badge/Cloudflare-Workers-f38020.svg?logo=cloudflare&style=flat-square)](https://workers.cloudflare.com)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6.svg?logo=typescript&style=flat-square)](https://www.typescriptlang.org)
 
-**Connect Claude, ChatGPT, Cursor, and autonomous AI agents directly to your one.com email infrastructure with full mailbox management capabilities.**
+<p align="center">
+  <img src="assets/banner.jpg" width="100%" alt="XTND | MCP | ONE Banner" />
+</p>
 
-[Features](#-key-features) • [Installation](#-installation--setup) • [Tool Catalog](#-available-mcp-tools) • [Architecture](#-architecture) • [Security](#-security--privacy) • [References](#-references--useful-links)
+**Empower Claude, Cursor, ChatGPT, Zed, and autonomous AI agents with full mailbox intelligence (IMAP/SMTP) over one.com.**
+
+[Features](#-key-features) • [Client Setup Guides](#-client-setup-guides) • [Tool Catalog](#-tool-catalog-15-tools) • [Workflow Prompts](#-workflow-prompts-4-assistants) • [Dynamic Resources](#-mcp-resources-4-endpoints) • [Architecture](#-architecture) • [Security](#-security--ai-token-budgeting)
 
 </div>
 
@@ -21,18 +26,21 @@
 
 ## 🚀 Key Features
 
-* **📂 Mailbox & Folder Management**: Full control over mailboxes (`INBOX`, `Drafts`, `Sent`, `Archive`, `Trash`, and custom folders) with real-time total and unread message counters.
-* **🔍 Fast Server-Side Search**: Search by full-text keyword, sender, recipient, subject, date ranges, and flags (`unread`, `flagged`) without downloading massive mailboxes.
-* **📖 AI Context Protection (HTML to Markdown)**: Automatically cleans HTML emails, strips CSS styles, tracking pixels, and scripts, converting message bodies into compact, token-efficient Markdown for LLMs.
-* **🏷️ Triage & Organization**: Mark emails as read/unread/flagged, organize into folders, and delete (soft delete to Trash or permanent expunge).
-* **✉️ Outbound Delivery & Composition**: Send new emails, reply with automated `In-Reply-To`/`References`/quoted history, forward messages, and save drafts directly to `one.com`'s IMAP Drafts folder.
-* **⚡ Dual-Mode Execution**: Run 100% locally via NPX Stdio (zero cloud setup) or connect to the multi-tenant hosted Cloudflare Edge Gateway (`https://one.mcp.xgi.io/sse`).
+* **📂 Complete Mailbox Hierarchy**: Manage all standard and custom folders (`INBOX`, `Drafts`, `Sent`, `Archive`, `Trash`) with real-time total and unread message counters.
+* **🔍 Server-Side Search Engine**: Search by full-text keyword, sender, recipient, subject, date ranges, and flags (`unread`, `flagged`) without downloading gigabytes of data.
+* **📖 AI Context Protection**: Automatically converts HTML emails into clean, token-efficient Markdown, stripping tracking pixels, inline CSS blobs, and scripts.
+* **🏷️ Triage & Flagging**: Mark emails as read/unread/flagged, batch move between folders, and perform safe trash or permanent expunge.
+* **✉️ Outbound SMTP Delivery**: Send new messages via `send.one.com:465` (implicit TLS), draft intelligent replies with automated `In-Reply-To`/`References`, forward threads, and manage drafts.
+* **⚡ Triple-Transport Architecture**: 
+  1. **NPX Stdio** for local desktop clients (`npx @xtnd-dynamics/mcp-one`).
+  2. **Streamable HTTP (`/mcp`)** for Smithery, Cursor, and web AI agents.
+  3. **Server-Sent Events (`/sse`)** for legacy streaming clients.
 
 ---
 
-## 📦 Installation & Setup
+## 📦 Client Setup Guides
 
-### Option 1: Claude Desktop (NPM Package — Recommended)
+### 1. Claude Desktop (Local NPX)
 
 Add the following to your `claude_desktop_config.json`:
 
@@ -54,14 +62,9 @@ Add the following to your `claude_desktop_config.json`:
 }
 ```
 
-> [!TIP]
-> Restart Claude Desktop (<kbd>Cmd</kbd> + <kbd>Q</kbd> $\rightarrow$ Reopen) after saving the config.
-
 ---
 
-### Option 2: 1-Click Install via Smithery
-
-Install automatically for Claude Desktop using the [Smithery](https://smithery.ai) CLI:
+### 2. 1-Click Install via Smithery CLI
 
 ```bash
 npx -y @smithery/cli install @xtnd-dynamics/mcp-one --client claude
@@ -69,15 +72,58 @@ npx -y @smithery/cli install @xtnd-dynamics/mcp-one --client claude
 
 ---
 
-### Option 3: Hosted SaaS Gateway (Remote AI Agents & Cursor)
+### 3. Cursor IDE (`.cursor/mcp.json`)
 
-For web-based AI clients, Cursor, or remote frameworks connecting over HTTPS / Server-Sent Events (SSE):
+```json
+{
+  "mcpServers": {
+    "one-mail": {
+      "command": "npx",
+      "args": ["-y", "@xtnd-dynamics/mcp-one"],
+      "env": {
+        "ONECOM_EMAIL": "user@yourdomain.com",
+        "ONECOM_PASSWORD": "your_mailbox_password"
+      }
+    }
+  }
+}
+```
+
+---
+
+### 4. Zed Editor (`settings.json`)
+
+```json
+{
+  "context_servers": {
+    "one-mail": {
+      "command": {
+        "path": "npx",
+        "args": ["-y", "@xtnd-dynamics/mcp-one"],
+        "env": {
+          "ONECOM_EMAIL": "user@yourdomain.com",
+          "ONECOM_PASSWORD": "your_mailbox_password"
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+### 5. Remote Hosted Edge Gateway (Streamable HTTP / SSE)
+
+For web-based AI clients or SaaS deployments:
+
+* **Streamable HTTP Endpoint:** `https://one.mcp.xgi.io/mcp`
+* **SSE Endpoint:** `https://one.mcp.xgi.io/sse`
 
 ```json
 {
   "mcpServers": {
     "XTND | MCP | ONE": {
-      "url": "https://one.mcp.xgi.io/sse",
+      "url": "https://one.mcp.xgi.io/mcp",
       "headers": {
         "X-OneCom-Email": "user@yourdomain.com",
         "X-OneCom-Password": "your_mailbox_password"
@@ -89,98 +135,110 @@ For web-based AI clients, Cursor, or remote frameworks connecting over HTTPS / S
 
 ---
 
-### Option 4: ChatGPT Custom Actions (OpenAPI 3.0)
+## 🛠️ Tool Catalog (15 Tools)
 
-In your Custom GPT configuration, add an **Action** pointing to the OpenAPI specification:
-
-* **OpenAPI URL:** `https://one.mcp.xgi.io/openapi.json`
-* **Authentication:** API Key (Bearer token)
-
----
-
-## 🛠️ Available MCP Tools
-
-`@xtnd-dynamics/mcp-one` provides 15 specialized tools across the entire mail management lifecycle:
-
-| Tool Name | Parameters | Description |
+| Tool Name | Description | Key Arguments |
 |---|---|---|
-| `list_folders` | *none* | Lists all mailboxes with total and unread message counts. |
-| `create_folder` | `name` | Creates a new folder or mailbox in the account. |
-| `rename_folder` | `oldName`, `newName` | Renames an existing mailbox. |
-| `delete_folder` | `name` | Deletes a folder (with system mailbox protections). |
-| `search_emails` | `query`, `folder?`, `from?`, `to?`, `subject?`, `since?`, `before?`, `unreadOnly?`, `flaggedOnly?`, `limit?` | Searches emails with server-side IMAP filters. |
-| `get_recent_emails` | `folder?`, `limit?` | Fetches recent email envelopes and unread statuses. |
-| `get_email_content` | `folder`, `uid`, `format?` | Retrieves full email content parsed to clean Markdown. |
-| `get_email_thread` | `folder`, `uidOrMessageId` | Traverses headers to reconstruct the complete conversation thread. |
-| `mark_emails` | `folder`, `uids[]`, `action` | Updates flags (`read`, `unread`, `flag`, `unflag`). |
-| `move_emails` | `sourceFolder`, `targetFolder`, `uids[]` | Moves emails between mailboxes. |
-| `delete_emails` | `folder`, `uids[]`, `permanent?` | Soft deletes (moves to Trash) or permanently expunges. |
-| `send_email` | `to`, `subject`, `bodyText`, `bodyHtml?`, `cc?`, `bcc?` | Sends outbound email via `send.one.com:465` (SMTPS). |
-| `reply_email` | `folder`, `uid`, `bodyText`, `bodyHtml?`, `replyAll?` | Sends a reply with proper `In-Reply-To` and quoted text. |
-| `forward_email` | `folder`, `uid`, `to`, `comment?` | Forwards an existing email with original headers. |
-| `create_draft` | `to`, `subject`, `bodyText`, `bodyHtml?`, `cc?` | Saves a message into `Drafts` without sending. |
+| `list_folders` | List all mailboxes/folders with message and unread counts | *(none)* |
+| `create_folder` | Create a new mailbox folder | `name` (string) |
+| `rename_folder` | Rename an existing mailbox folder | `oldName`, `newName` |
+| `delete_folder` | Delete a mailbox folder | `name` (string) |
+| `search_emails` | Server-side filtered email search | `folder`, `query`, `from`, `to`, `subject`, `unreadOnly`, `limit` |
+| `get_recent_emails` | Retrieve recent email headers and envelope metadata | `folder`, `limit` |
+| `get_email_content` | Fetch full message body converted to Markdown | `folder`, `uid`, `format` |
+| `get_email_thread` | Retrieve full conversation thread history | `folder`, `uidOrMessageId` |
+| `mark_emails` | Update flags (read, unread, flag, unflag) | `folder`, `uids`, `action` |
+| `move_emails` | Move emails between folders (e.g. to Archive) | `sourceFolder`, `targetFolder`, `uids` |
+| `delete_emails` | Soft delete to Trash or permanent expunge | `folder`, `uids`, `permanent` |
+| `send_email` | Send outbound email via `send.one.com:465` (TLS) | `to`, `subject`, `bodyText`, `bodyHtml` |
+| `reply_email` | Reply with automated headers and quotation | `folder`, `uid`, `bodyText`, `replyAll` |
+| `forward_email` | Forward email with original header context | `folder`, `uid`, `to`, `comment` |
+| `create_draft` | Save message draft directly to one.com Drafts | `to`, `subject`, `bodyText` |
 
 ---
 
-## 🏗️ Architecture
+## 🧠 Workflow Prompts (4 Assistants)
 
+| Prompt Name | Purpose | Parameters |
+|---|---|---|
+| `triage-inbox` | Scans unread emails, categorizes into priority buckets, and drafts action plans | `limit` (optional) |
+| `draft-reply` | Inspects thread context and drafts contextual replies | `uid` (required), `tone` (optional) |
+| `clean-inbox` | Identifies marketing newsletters, promotional blasts, and automated alerts | `folder` (optional) |
+| `executive-briefing` | Generates a high-density daily digest with blocker checklist | *(none)* |
+
+---
+
+## 📂 MCP Resources (4 Endpoints)
+
+| Resource URI | MIME Type | Description |
+|---|---|---|
+| `one://folders` | `application/json` | Real-time catalog of all mailboxes and unread counters |
+| `one://status` | `application/json` | Gateway connection health and protocol capabilities |
+| `one://templates/meeting-followup` | `text/markdown` | Standardized executive meeting summary template |
+| `one://templates/out-of-office` | `text/markdown` | Standardized out-of-office auto-reply template |
+
+---
+
+## 🏛️ Architecture
+
+```mermaid
+flowchart TD
+    subgraph Clients ["AI Clients & Platforms"]
+        CD["Claude Desktop"]
+        CR["Cursor / Zed / Windsurf"]
+        CG["ChatGPT Custom GPTs"]
+        SM["Smithery Marketplace"]
+    end
+
+    subgraph LocalTransport ["Local Execution"]
+        NPX["npx @xtnd-dynamics/mcp-one\n(Stdio Protocol)"]
+    end
+
+    subgraph EdgeTransport ["Cloudflare Edge (one.mcp.xgi.io)"]
+        HTTP["Streamable HTTP (/mcp)"]
+        SSE["Server-Sent Events (/sse)"]
+        CARD["Static Server Card (/.well-known/mcp/server-card.json)"]
+    end
+
+    subgraph CoreEngine ["XTND Core Engine"]
+        MIME["MIME & Markdown Token Optimizer"]
+        IMAP["IMAP Client (imap.one.com:993 TLS)"]
+        SMTP["SMTP Client (send.one.com:465 TLS)"]
+    end
+
+    subgraph OneCom ["One.com Mail Infrastructure"]
+        MBOX["User Mailboxes & Folders"]
+        MX["Mail Submission Relays"]
+    end
+
+    CD --> NPX
+    CR --> NPX
+    CR --> HTTP
+    SM --> HTTP
+    CG --> HTTP
+    CD --> SSE
+
+    NPX --> MIME
+    HTTP --> MIME
+    SSE --> MIME
+
+    MIME --> IMAP
+    MIME --> SMTP
+
+    IMAP <--> MBOX
+    SMTP --> MX
 ```
-┌─────────────────────────┐
-│   AI Client / Claude    │
-└────────────┬────────────┘
-             │  JSON-RPC (stdio or HTTP/SSE)
-             ▼
-┌─────────────────────────────────────────────────────────┐
-│ XTND | MCP | ONE (@xtnd-dynamics/mcp-one)                        │
-│                                                         │
-│  [HTML-to-Markdown Optimizer] ── Token Budget Pruner    │
-│  [MIME Parser & Builder]     ── RFC 5322 & RFC 2045     │
-│  [Multi-Tenant Session Pool] ── Isolated Mailbox Auth   │
-└────────────┬─────────────────────────────────┬──────────┘
-             │ IMAP:993 (Implicit TLS)         │ SMTPS:465 (Implicit TLS)
-             ▼                                 ▼
-    ┌─────────────────┐               ┌─────────────────┐
-    │  imap.one.com   │               │  send.one.com   │
-    │ (Read / Search) │               │ (Send / Reply)  │
-    └─────────────────┘               └─────────────────┘
-```
 
 ---
 
-## 🔒 Security & Privacy
+## 🔒 Security & AI Token Budgeting
 
-* **Zero Credential Logging**: Mailbox passwords are never logged, buffered to disk, or retained across sessions.
-* **Direct Encrypted Transport**: All IMAP communication strictly uses implicit SSL/TLS on port 993 (`imap.one.com`), and all SMTP communication strictly uses implicit SSL/TLS on port 465 (`send.one.com`).
-* **Local Isolation**: In Local Stdio mode (`npx @xtnd-dynamics/mcp-one`), credentials remain 100% on your local machine and never touch any intermediate server.
-
----
-
-## 📚 References & Useful Links
-
-* [one.com Mail Setup Guide](https://help.one.com/hc/en-us/articles/115005586869-Setting-up-mail-on-iPhone-iPad-Mac-PC)
-* [Model Context Protocol (MCP) Official Documentation](https://modelcontextprotocol.io)
-* [Anthropic MCP GitHub Organization](https://github.com/modelcontextprotocol)
-* [Smithery.ai Registry Manifest](https://smithery.ai/docs/config)
-* [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-* [XTND Dynamics GitHub](https://github.com/XTND-DYNAMICS)
-
----
-
-## 👥 Contributing
-
-Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) and [Security Policy](SECURITY.md).
-
-```bash
-git clone https://github.com/XTND-DYNAMICS/xtnd-mcp-one.git
-cd xtnd-mcp-one
-npm install
-npm test
-```
+* **Zero-Credential Storage**: Credentials are never persisted on edge servers. Stdio uses local process environment; hosted gateway uses ephemeral request headers.
+* **Implicit TLS Only**: Inbound connections use port 993 (IMAPS) and outbound uses port 465 (SMTPS) over strict TLS sockets, avoiding STARTTLS vulnerabilities.
+* **Token Budget Guard**: Incoming HTML is sanitized and converted to semantic Markdown, discarding CSS boilerplate, tracking pixels, and binary attachments to prevent context window exhaustion.
 
 ---
 
 ## 📄 License
 
-Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
-
-Copyright © 2026 [XTND Dynamics](https://github.com/XTND-DYNAMICS).
+MIT License © 2026 [XTND Dynamics](https://github.com/XTND-DYNAMICS). Developed for the global AI developer ecosystem.

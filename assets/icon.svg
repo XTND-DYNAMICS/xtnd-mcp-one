@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff7e33"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded Squircle Background -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  <rect width="508" height="508" x="2" y="2" rx="126" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4"/>
+
+  <!-- Neural Connection Lines (MCP Context Protocol) -->
+  <g opacity="0.3" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4,4">
+    <line x1="120" y1="140" x2="256" y2="256"/>
+    <line x1="392" y1="140" x2="256" y2="256"/>
+    <line x1="256" y1="256" x2="256" y2="390"/>
+  </g>
+
+  <!-- Outer Glow Envelope -->
+  <g filter="url(#glow)">
+    <path d="M 110 160 C 110 145, 122 135, 138 135 L 374 135 C 390 135, 402 145, 402 160 L 402 350 C 402 365, 390 377, 374 377 L 138 377 C 122 377, 110 365, 110 350 Z" 
+          fill="none" stroke="url(#primaryGrad)" stroke-width="14" stroke-linejoin="round"/>
+    
+    <!-- Envelope Flap -->
+    <path d="M 114 148 L 256 268 L 398 148" 
+          fill="none" stroke="url(#primaryGrad)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- Central Intelligence Core (Model Context Node) -->
+  <circle cx="256" cy="268" r="28" fill="#0f172a" stroke="url(#accentGrad)" stroke-width="8"/>
+  <circle cx="256" cy="268" r="12" fill="#38bdf8"/>
+
+  <!-- Speed Wing Accents (One.com Fast Cloud Mail) -->
+  <path d="M 180 315 L 215 315" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 297 315 L 332 315" stroke="#38bdf8" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="145" cy="315" r="4" fill="#38bdf8"/>
+  <circle cx="367" cy="315" r="4" fill="#38bdf8"/>
+
+  <!-- XTND Wordmark Subtitle -->
+  <text x="256" y="440" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Inter', sans-serif" font-weight="900" font-size="34" letter-spacing="8" fill="#f8fafc">
+    XTND<tspan fill="#ff7e33">·</tspan>ONE
+  </text>
+</svg>

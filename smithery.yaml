@@ -11,31 +11,49 @@ startCommand:
         type: string
         title: "One.com Email Address"
         description: "Your full one.com email address (e.g. user@yourdomain.com)"
+        x-from:
+          type: header
+          name: X-OneCom-Email
       onecomPassword:
         type: string
         title: "One.com Mailbox Password"
         description: "Your one.com mailbox password"
         format: password
+        x-from:
+          type: header
+          name: X-OneCom-Password
       onecomImapHost:
         type: string
         title: "IMAP Host"
         default: "imap.one.com"
         description: "Inbound IMAP server host (default: imap.one.com)"
+        x-from:
+          type: header
+          name: X-OneCom-Imap-Host
       onecomImapPort:
         type: number
         title: "IMAP Port"
         default: 993
         description: "Inbound IMAP port (default: 993 implicit TLS)"
+        x-from:
+          type: header
+          name: X-OneCom-Imap-Port
       onecomSmtpHost:
         type: string
         title: "SMTP Host"
         default: "send.one.com"
         description: "Outbound SMTP server host (default: send.one.com)"
+        x-from:
+          type: header
+          name: X-OneCom-Smtp-Host
       onecomSmtpPort:
         type: number
         title: "SMTP Port"
         default: 465
         description: "Outbound SMTP port (default: 465 implicit TLS)"
+        x-from:
+          type: header
+          name: X-OneCom-Smtp-Port
   commandFunction: |-
     (config) => ({
       command: 'npx',
