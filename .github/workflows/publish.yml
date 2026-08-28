@@ -1,9 +1,9 @@
 name: Publish to NPM Registry
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
-  workflow_dispatch:
   push:
     tags:
       - 'v*'
@@ -22,7 +22,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -35,7 +34,5 @@ jobs:
       - name: Build distribution
         run: npm run build
 
-      - name: Publish to NPM
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to NPM with OIDC Provenance
+        run: npm publish --provenance --access public
