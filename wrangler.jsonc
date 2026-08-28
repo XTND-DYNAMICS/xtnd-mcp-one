@@ -11,6 +11,10 @@
     {
       "pattern": "one.mcp.xgi.io",
       "custom_domain": true
+    },
+    {
+      "pattern": "mcp-one.xgi.io",
+      "custom_domain": true
     }
   ],
   "workers_dev": false,
