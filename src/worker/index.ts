@@ -1,10 +1,7 @@
-/**
- * Cloudflare Worker Entry Point for xtnd-mcp-one (Multi-Tenant & Hosted SaaS)
- */
-
 import { OneMailClient } from '../core/client.js';
 import { WorkerEnv } from '../types.js';
 import { authenticateRequest } from './auth.js';
+import { handleMcpStreamableHttp } from './mcp-streamable-http.js';
 import { getOpenApiSpec } from './openapi.js';
 import {
   extractCredentialsFromRequest,
@@ -34,7 +31,7 @@ export default {
         JSON.stringify({
           status: 'ok',
           service: 'xtnd-mcp-one',
-          version: '0.1.0',
+          version: '0.1.2',
           multiTenant: true,
           timestamp: new Date().toISOString(),
         }),
@@ -49,6 +46,11 @@ export default {
       return new Response(JSON.stringify(getOpenApiSpec(url.origin), null, 2), {
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    // 3. Streamable HTTP endpoint for Smithery & modern MCP clients (/mcp)
+    if (url.pathname === '/mcp') {
+      return handleMcpStreamableHttp(request, env);
     }
 
     // Authenticate all operational endpoints via API Key

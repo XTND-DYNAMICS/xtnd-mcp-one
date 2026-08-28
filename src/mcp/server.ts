@@ -13,8 +13,8 @@ import { z } from 'zod';
 
 export function createOneMcpServer(getClient: () => OneMailClient): McpServer {
   const server = new McpServer({
-    name: 'xtnd-mcp-one',
-    version: '0.1.0',
+    name: '@xtnd-dynamics/mcp-one',
+    version: '0.1.2',
   });
 
   registerFolderTools(server, getClient);

@@ -30,10 +30,9 @@ async function testHostedSaasGateway() {
   const env = loadDevVars();
   const email = env.ONECOM_EMAIL;
   const password = env.ONECOM_PASSWORD;
-  const apiKey = 'xmail_s9gRHVq3IL4MWA4H_NcNmlo2PeuGTD8k';
+  const apiKey = env.XMAIL_API_KEY || env.ONECOM_API_KEY || '';
 
   console.log(`📡 Gateway URL       : https://one.mcp.xgi.io`);
-  console.log(`🔑 Bearer Auth Token : ${apiKey}`);
   console.log(`👤 Dynamic Tenant    : ${email} (passed via X-OneCom-Email header)\n`);
 
   // 1. Test Health endpoint
@@ -42,6 +41,12 @@ async function testHostedSaasGateway() {
   const healthData = await healthRes.json<any>();
   console.log('   ✅ Health Response:', JSON.stringify(healthData));
   console.log();
+
+  if (!apiKey) {
+    console.log('   ⚠️  No XMAIL_API_KEY found in .dev.vars (skipping REST /api/* endpoint check).');
+    console.log('   ℹ️  The MCP endpoint /mcp is tested in test:streamable.\n');
+    return;
+  }
 
   // 2. Test Dynamic Multi-Tenant Header Authentication (/api/folders)
   console.log('🔹 2. Invoking /api/folders passing dynamic tenant credentials in HTTP headers...');
