@@ -1,6 +1,6 @@
 {
   "name": "@xtnd-dynamics/mcp-one",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Model Context Protocol (MCP) server for one.com mailboxes. Full email management (IMAP/SMTP) for Claude and AI agents.",
   "license": "MIT",
   "author": "XTND Dynamics",
@@ -26,6 +26,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
+    "mcp-one": "./dist/cli.js",
     "xtnd-mcp-one": "./dist/cli.js"
   },
   "files": [
