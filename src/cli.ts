@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * CLI Entrypoint for Local Stdio Transport (npx @xtnd/mcp-one)
  */

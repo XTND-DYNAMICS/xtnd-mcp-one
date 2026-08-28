@@ -1,12 +1,41 @@
 {
   "name": "@xtnd/mcp-one",
   "version": "0.1.0",
-  "private": true,
+  "description": "Model Context Protocol (MCP) server for one.com mailboxes. Full email management (IMAP/SMTP) for Claude and AI agents.",
+  "license": "MIT",
+  "author": "XTND Dynamics",
+  "homepage": "https://github.com/XTND-DYNAMICS/xtnd-mcp-one#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/XTND-DYNAMICS/xtnd-mcp-one.git"
+  },
+  "bugs": {
+    "url": "https://github.com/XTND-DYNAMICS/xtnd-mcp-one/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "email",
+    "one.com",
+    "imap",
+    "smtp",
+    "ai-agent"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
     "xtnd-mcp-one": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "smithery.yaml"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "exports": {
     ".": {
@@ -18,7 +47,7 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "check": "tsc --noEmit",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
     "test": "tsx --test test/*.test.ts",
     "test:stdio": "tsx scripts/test-local-stdio.ts",
     "test:hosted": "tsx scripts/test-hosted-saas.ts",

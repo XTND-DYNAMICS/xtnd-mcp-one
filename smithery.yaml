@@ -1,0 +1,35 @@
+# Smithery configuration: https://smithery.ai/docs/config
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - ONECOM_EMAIL
+      - ONECOM_PASSWORD
+    properties:
+      ONECOM_EMAIL:
+        type: string
+        description: Your full one.com email address (e.g. user@yourdomain.com)
+      ONECOM_PASSWORD:
+        type: string
+        description: Your one.com mailbox password
+      ONECOM_IMAP_HOST:
+        type: string
+        default: imap.one.com
+        description: Inbound IMAP server host (default: imap.one.com)
+      ONECOM_IMAP_PORT:
+        type: number
+        default: 993
+        description: Inbound IMAP port (default: 993 implicit TLS)
+      ONECOM_SMTP_HOST:
+        type: string
+        default: send.one.com
+        description: Outbound SMTP server host (default: send.one.com)
+      ONECOM_SMTP_PORT:
+        type: number
+        default: 465
+        description: Outbound SMTP port (default: 465 implicit TLS)
+  command: npx
+  args:
+    - -y
+    - "@xtnd/mcp-one"
