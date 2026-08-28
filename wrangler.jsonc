@@ -1,0 +1,47 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "xtnd-mcp-one",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "pattern": "one.mcp.xgi.io",
+      "custom_domain": true
+    }
+  ],
+  "workers_dev": false,
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "12eb8b74953c4e7b8483107fd2158932"
+    }
+  ],
+  "vars": {
+    "ONECOM_IMAP_HOST": "imap.one.com",
+    "ONECOM_IMAP_PORT": "993",
+    "ONECOM_SMTP_HOST": "send.one.com",
+    "ONECOM_SMTP_PORT": "465"
+  },
+  "env": {
+    "dev": {
+      "workers_dev": true,
+      "routes": [],
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          "id": "795da548e85c49e38858b9aca6817753"
+        }
+      ],
+      "vars": {
+        "ONECOM_IMAP_HOST": "imap.one.com",
+        "ONECOM_IMAP_PORT": "993",
+        "ONECOM_SMTP_HOST": "send.one.com",
+        "ONECOM_SMTP_PORT": "465"
+      }
+    }
+  }
+}

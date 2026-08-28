@@ -1,0 +1,13 @@
+# Local development environment variables for xtnd-mcp-one
+# DO NOT commit real passwords to git.
+
+ONECOM_EMAIL=user@domain.com
+ONECOM_PASSWORD=your_mailbox_password
+ONECOM_IMAP_HOST=imap.one.com
+ONECOM_IMAP_PORT=993
+ONECOM_SMTP_HOST=send.one.com
+ONECOM_SMTP_PORT=465
+
+# Optional dev fallback API keys (SHA-256 hash of "dev-secret-key")
+# 7c4a8d09ca3762af61e59520943dc26494f8941b
+API_KEYS_SHA256=
