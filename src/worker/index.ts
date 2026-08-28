@@ -1,13 +1,16 @@
 /**
- * Cloudflare Worker Entry Point for xtnd-mcp-one
+ * Cloudflare Worker Entry Point for xtnd-mcp-one (Multi-Tenant & Hosted SaaS)
  */
 
 import { OneMailClient } from '../core/client.js';
-import { createOneMcpServer } from '../mcp/server.js';
-import { MailboxCredentials, WorkerEnv } from '../types.js';
+import { WorkerEnv } from '../types.js';
 import { authenticateRequest } from './auth.js';
 import { getOpenApiSpec } from './openapi.js';
-import { handleMessagePost, handleSseConnect } from './sse-handler.js';
+import {
+  extractCredentialsFromRequest,
+  handleMessagePost,
+  handleSseConnect,
+} from './sse-handler.js';
 
 export default {
   async fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext): Promise<Response> {
@@ -20,7 +23,7 @@ export default {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-OneCom-Email, X-OneCom-Password, X-OneCom-Imap-Host, X-OneCom-Imap-Port, X-OneCom-Smtp-Host, X-OneCom-Smtp-Port',
         },
       });
     }
@@ -32,6 +35,7 @@ export default {
           status: 'ok',
           service: 'xtnd-mcp-one',
           version: '0.1.0',
+          multiTenant: true,
           timestamp: new Date().toISOString(),
         }),
         {
@@ -47,7 +51,7 @@ export default {
       });
     }
 
-    // Authenticate all operational endpoints
+    // Authenticate all operational endpoints via API Key
     const auth = await authenticateRequest(request, env);
     if (!auth.authenticated) {
       return new Response(
@@ -63,32 +67,30 @@ export default {
       );
     }
 
-    // Mailbox credentials resolver
-    const credentials: MailboxCredentials = {
-      email: env.ONECOM_EMAIL || 'pam@stejle.dk',
-      password: env.ONECOM_PASSWORD || '',
-      imapHost: env.ONECOM_IMAP_HOST || 'imap.one.com',
-      imapPort: env.ONECOM_IMAP_PORT ? parseInt(env.ONECOM_IMAP_PORT, 10) : 993,
-      smtpHost: env.ONECOM_SMTP_HOST || 'send.one.com',
-      smtpPort: env.ONECOM_SMTP_PORT ? parseInt(env.ONECOM_SMTP_PORT, 10) : 465,
-    };
-
-    const getClient = () => new OneMailClient(credentials);
-    const mcpServer = createOneMcpServer(getClient);
-
-    // 3. MCP SSE Stream endpoint
+    // 3. MCP SSE Stream endpoint (Multi-tenant)
     if (url.pathname === '/sse' && request.method === 'GET') {
-      return handleSseConnect(request, mcpServer);
+      return handleSseConnect(request, env);
     }
 
     // 4. MCP Message dispatch endpoint
     if (url.pathname === '/message' && request.method === 'POST') {
-      return handleMessagePost(request, mcpServer);
+      return handleMessagePost(request);
     }
 
-    // 5. REST endpoints for ChatGPT / Webhook callers
+    // 5. REST endpoints (Multi-tenant)
+    const credentials = extractCredentialsFromRequest(request, env);
+    if (!credentials.email || !credentials.password) {
+      return new Response(
+        JSON.stringify({
+          error: 'Missing mailbox credentials. Pass X-OneCom-Email and X-OneCom-Password headers or configure server secrets.',
+        }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const client = new OneMailClient(credentials);
+
     if (url.pathname === '/api/folders' && request.method === 'GET') {
-      const client = getClient();
       const folders = await client.listFolders();
       return new Response(JSON.stringify({ folders }), {
         headers: { 'Content-Type': 'application/json' },
@@ -96,7 +98,6 @@ export default {
     }
 
     if (url.pathname === '/api/emails/search' && request.method === 'POST') {
-      const client = getClient();
       const body = await request.json<any>();
       const result = await client.searchEmails(body);
       return new Response(JSON.stringify(result), {
@@ -108,7 +109,6 @@ export default {
       const uidStr = url.pathname.replace('/api/emails/', '');
       const uid = parseInt(uidStr, 10);
       const folder = url.searchParams.get('folder') || 'INBOX';
-      const client = getClient();
       const email = await client.getEmailContent(folder, uid);
       return new Response(JSON.stringify(email), {
         headers: { 'Content-Type': 'application/json' },
@@ -116,7 +116,6 @@ export default {
     }
 
     if (url.pathname === '/api/emails/send' && request.method === 'POST') {
-      const client = getClient();
       const body = await request.json<any>();
       const result = await client.sendEmail(body);
       return new Response(JSON.stringify(result), {

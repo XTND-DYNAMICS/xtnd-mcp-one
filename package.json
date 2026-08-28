@@ -5,6 +5,9 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "xtnd-mcp-one": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,7 +20,9 @@
     "check": "tsc --noEmit",
     "build": "tsc",
     "test": "tsx --test test/*.test.ts",
-    "test:live": "tsx scripts/smoke-test-live.ts",
+    "test:stdio": "tsx scripts/test-local-stdio.ts",
+    "test:hosted": "tsx scripts/test-hosted-saas.ts",
+    "test:live": "tsx scripts/test-local-stdio.ts && tsx scripts/test-hosted-saas.ts",
     "typegen": "wrangler types"
   },
   "dependencies": {
