@@ -39,3 +39,8 @@ jobs:
 
       - name: Publish to NPM with OIDC Provenance
         run: npm publish --provenance --access public
+
+      - name: Sync to Smithery Registry API
+        run: npm run sync:smithery
+        env:
+          SMITHERY_API_KEY: ${{ secrets.SMITHERY_API_KEY }}

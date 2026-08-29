@@ -54,6 +54,7 @@
     "test:hosted": "tsx scripts/test-hosted-saas.ts",
     "test:streamable": "tsx scripts/test-streamable-http.ts",
     "test:live": "tsx scripts/test-local-stdio.ts && tsx scripts/test-hosted-saas.ts && tsx scripts/test-streamable-http.ts",
+    "sync:smithery": "tsx scripts/sync-smithery.ts",
     "typegen": "wrangler types"
   },
   "dependencies": {
