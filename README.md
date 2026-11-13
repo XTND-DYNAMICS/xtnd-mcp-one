@@ -119,12 +119,17 @@ For web-based AI clients or SaaS deployments:
 * **Streamable HTTP Endpoint:** `https://one.mcp.xgi.io/mcp`
 * **SSE Endpoint:** `https://one.mcp.xgi.io/sse`
 
+Both need an mcp-one API key as a bearer token, issued by XTND
+(`scripts/new-api-key.mjs`). Without one the gateway answers 401 and never
+contacts one.com.
+
 ```json
 {
   "mcpServers": {
     "XTND | MCP | ONE": {
       "url": "https://one.mcp.xgi.io/mcp",
       "headers": {
+        "Authorization": "Bearer <your mcp-one API key>",
         "X-OneCom-Email": "user@yourdomain.com",
         "X-OneCom-Password": "your_mailbox_password"
       }
