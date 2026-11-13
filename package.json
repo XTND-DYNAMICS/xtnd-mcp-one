@@ -1,6 +1,6 @@
 {
   "name": "@xtnd-dynamics/mcp-one",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Model Context Protocol (MCP) server for one.com mailboxes. Full email management (IMAP/SMTP) for Claude and AI agents.",
   "license": "MIT",
   "author": "XTND Dynamics",
@@ -49,7 +49,7 @@
     "deploy": "wrangler deploy",
     "check": "tsc --noEmit",
     "build": "tsc -p tsconfig.build.json && chmod +x dist/cli.js",
-    "test": "tsx --test test/*.test.ts",
+    "test": "tsx --test test/*.test.ts test/*.test.mjs",
     "test:stdio": "tsx scripts/test-local-stdio.ts",
     "test:hosted": "tsx scripts/test-hosted-saas.ts",
     "test:streamable": "tsx scripts/test-streamable-http.ts",
