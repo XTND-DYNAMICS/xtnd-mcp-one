@@ -105,12 +105,10 @@ export default {
       );
     }
 
-    // 4. Streamable HTTP endpoint for Smithery & modern MCP clients (/mcp)
-    if (url.pathname === '/mcp') {
-      return handleMcpStreamableHttp(request, env);
-    }
-
-    // Authenticate all operational endpoints via API Key
+    // Every operational endpoint needs an mcp-one API key: /mcp, /sse,
+    // /message and the REST API. Without one, nothing is forwarded to one.com,
+    // so this Worker cannot be used to try mailbox passwords there
+    // (xtnd-mcp-one#6).
     const auth = await authenticateRequest(request, env);
     if (!auth.authenticated) {
       return new Response(
@@ -124,6 +122,11 @@ export default {
           headers: { 'Content-Type': 'application/json' },
         }
       );
+    }
+
+    // Streamable HTTP endpoint for modern MCP clients (/mcp)
+    if (url.pathname === '/mcp') {
+      return handleMcpStreamableHttp(request, env);
     }
 
     // 3. MCP SSE Stream endpoint (Multi-tenant)

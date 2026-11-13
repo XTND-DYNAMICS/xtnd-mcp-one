@@ -32,10 +32,14 @@ async function testStreamableHttp() {
   const email = env.ONECOM_EMAIL;
   const password = env.ONECOM_PASSWORD;
   const baseUrl = 'https://one.mcp.xgi.io/mcp';
+  // /mcp needs an mcp-one API key (xtnd-mcp-one#6), issued with scripts/new-api-key.mjs.
+  const apiKey = env.MCP_ONE_API_KEY;
+  if (!apiKey) throw new Error('MCP_ONE_API_KEY is not set in .dev.vars or the environment: /mcp needs an mcp-one API key.');
+  const auth = { Authorization: `Bearer ${apiKey}` };
 
   // 1. Test GET /mcp (Capabilities Discovery)
   console.log('🔹 1. Testing GET /mcp (Capabilities Discovery)...');
-  const getRes = await fetch(baseUrl, { method: 'GET' });
+  const getRes = await fetch(baseUrl, { method: 'GET', headers: auth });
   if (!getRes.ok) throw new Error(`GET /mcp failed with status ${getRes.status}`);
   const getData = await getRes.json<any>();
   console.log('   ✅ GET /mcp Capabilities:', JSON.stringify(getData.result.serverInfo));
@@ -44,7 +48,7 @@ async function testStreamableHttp() {
   console.log('\n🔹 2. Testing POST /mcp (initialize JSON-RPC handshake)...');
   const initRes = await fetch(baseUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...auth },
     body: JSON.stringify({
       jsonrpc: '2.0',
       id: 1,
@@ -63,7 +67,7 @@ async function testStreamableHttp() {
   console.log('\n🔹 3. Testing POST /mcp (notifications/initialized)...');
   const notifRes = await fetch(baseUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...auth },
     body: JSON.stringify({
       jsonrpc: '2.0',
       method: 'notifications/initialized',
@@ -75,7 +79,7 @@ async function testStreamableHttp() {
   console.log('\n🔹 4. Testing POST /mcp (tools/list)...');
   const listRes = await fetch(baseUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...auth },
     body: JSON.stringify({
       jsonrpc: '2.0',
       id: 2,
@@ -94,6 +98,7 @@ async function testStreamableHttp() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...auth,
       'X-OneCom-Email': email,
       'X-OneCom-Password': password,
     },
@@ -121,7 +126,7 @@ async function testStreamableHttp() {
   console.log('\n🔹 6. Testing POST /mcp (ping)...');
   const pingRes = await fetch(baseUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...auth },
     body: JSON.stringify({
       jsonrpc: '2.0',
       id: 4,
