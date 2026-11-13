@@ -84,12 +84,17 @@ export interface SendEmailOptions {
 }
 
 export interface WorkerEnv {
-  KV: KVNamespace;
+  /** mcp-one's own API keys (`apikey:<sha256>`), written by scripts/new-api-key.mjs. */
+  API_KEYS: KVNamespace;
+  /**
+   * TRANSITION, xtnd-mcp-one#2: xtnd-xmail-api's namespace, read only to accept
+   * keys issued there. Removed in step 2, by 20 Nov 2026.
+   */
+  XMAIL_KEYS?: KVNamespace;
   ONECOM_IMAP_HOST?: string;
   ONECOM_IMAP_PORT?: string;
   ONECOM_SMTP_HOST?: string;
   ONECOM_SMTP_PORT?: string;
   ONECOM_EMAIL?: string;
   ONECOM_PASSWORD?: string;
-  API_KEYS_SHA256?: string;
 }
