@@ -7,10 +7,18 @@ import { OneMailClient } from '../../core/client.js';
 import { DeleteEmailsSchema, MarkEmailsSchema, MoveEmailsSchema } from '../schemas.js';
 
 export function registerTriageTools(server: McpServer, getClient: () => OneMailClient) {
-  server.tool(
+  server.registerTool(
     'mark_emails',
-    'Mark one or multiple emails as read, unread, flagged (starred), or unflagged.',
-    MarkEmailsSchema.shape,
+    {
+      description: 'Mark one or multiple emails as read, unread, flagged (starred), or unflagged.',
+      inputSchema: MarkEmailsSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
     async (args) => {
       try {
         const client = getClient();
@@ -27,10 +35,18 @@ export function registerTriageTools(server: McpServer, getClient: () => OneMailC
     }
   );
 
-  server.tool(
+  server.registerTool(
     'move_emails',
-    'Move one or multiple emails from a source folder to a destination folder (e.g. Archive, Work, Projects).',
-    MoveEmailsSchema.shape,
+    {
+      description: 'Move one or multiple emails from a source folder to a destination folder (e.g. Archive, Work, Projects).',
+      inputSchema: MoveEmailsSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
     async (args) => {
       try {
         const client = getClient();
@@ -47,10 +63,18 @@ export function registerTriageTools(server: McpServer, getClient: () => OneMailC
     }
   );
 
-  server.tool(
+  server.registerTool(
     'delete_emails',
-    'Delete emails by moving them to Trash (soft delete) or permanently expunging them.',
-    DeleteEmailsSchema.shape,
+    {
+      description: 'Delete emails by moving them to Trash (soft delete) or permanently expunging them.',
+      inputSchema: DeleteEmailsSchema.shape,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
     async (args) => {
       try {
         const client = getClient();

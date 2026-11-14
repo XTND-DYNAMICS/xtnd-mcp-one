@@ -7,11 +7,21 @@ import { OneMailClient } from '../../core/client.js';
 import { truncateForAI } from '../../core/parser/markdown.js';
 import { GetEmailContentSchema, GetEmailThreadSchema } from '../schemas.js';
 
+const READ_ONLY_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
 export function registerReadTools(server: McpServer, getClient: () => OneMailClient) {
-  server.tool(
+  server.registerTool(
     'get_email_content',
-    'Fetch full email content by UID from a folder. Body is converted to clean Markdown by default to optimize token usage.',
-    GetEmailContentSchema.shape,
+    {
+      description: 'Fetch full email content by UID from a folder. Body is converted to clean Markdown by default to optimize token usage.',
+      inputSchema: GetEmailContentSchema.shape,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
     async (args) => {
       try {
         const client = getClient();
@@ -58,10 +68,13 @@ export function registerReadTools(server: McpServer, getClient: () => OneMailCli
     }
   );
 
-  server.tool(
+  server.registerTool(
     'get_email_thread',
-    'Retrieve the full conversation thread for a given email UID or Message-ID.',
-    GetEmailThreadSchema.shape,
+    {
+      description: 'Retrieve the full conversation thread for a given email UID or Message-ID.',
+      inputSchema: GetEmailThreadSchema.shape,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
     async (args) => {
       try {
         const client = getClient();

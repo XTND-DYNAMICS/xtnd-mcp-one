@@ -6,11 +6,35 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { OneMailClient } from '../../core/client.js';
 import { CreateFolderSchema, DeleteFolderSchema, ListFoldersSchema, RenameFolderSchema } from '../schemas.js';
 
+const READ_ONLY_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
+const FOLDER_MUTATION_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: true,
+} as const;
+
+const DESTRUCTIVE_FOLDER_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: false,
+  openWorldHint: true,
+} as const;
+
 export function registerFolderTools(server: McpServer, getClient: () => OneMailClient) {
-  server.tool(
+  server.registerTool(
     'list_folders',
-    'List all mailboxes/folders in the one.com mail account with total and unread message counts.',
-    ListFoldersSchema.shape,
+    {
+      description: 'List all mailboxes/folders in the one.com mail account with total and unread message counts.',
+      inputSchema: ListFoldersSchema.shape,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
     async () => {
       try {
         const client = getClient();
@@ -32,10 +56,13 @@ export function registerFolderTools(server: McpServer, getClient: () => OneMailC
     }
   );
 
-  server.tool(
+  server.registerTool(
     'create_folder',
-    'Create a new folder or mailbox in the one.com mail account.',
-    CreateFolderSchema.shape,
+    {
+      description: 'Create a new folder or mailbox in the one.com mail account.',
+      inputSchema: CreateFolderSchema.shape,
+      annotations: FOLDER_MUTATION_ANNOTATIONS,
+    },
     async (args) => {
       try {
         const client = getClient();
@@ -52,10 +79,13 @@ export function registerFolderTools(server: McpServer, getClient: () => OneMailC
     }
   );
 
-  server.tool(
+  server.registerTool(
     'rename_folder',
-    'Rename an existing mailbox/folder in the one.com mail account.',
-    RenameFolderSchema.shape,
+    {
+      description: 'Rename an existing mailbox/folder in the one.com mail account.',
+      inputSchema: RenameFolderSchema.shape,
+      annotations: FOLDER_MUTATION_ANNOTATIONS,
+    },
     async (args) => {
       try {
         const client = getClient();
@@ -72,10 +102,13 @@ export function registerFolderTools(server: McpServer, getClient: () => OneMailC
     }
   );
 
-  server.tool(
+  server.registerTool(
     'delete_folder',
-    'Delete a folder/mailbox from the one.com mail account.',
-    DeleteFolderSchema.shape,
+    {
+      description: 'Delete a folder/mailbox from the one.com mail account.',
+      inputSchema: DeleteFolderSchema.shape,
+      annotations: DESTRUCTIVE_FOLDER_ANNOTATIONS,
+    },
     async (args) => {
       try {
         const client = getClient();

@@ -97,4 +97,5 @@ export interface WorkerEnv {
   ONECOM_SMTP_PORT?: string;
   ONECOM_EMAIL?: string;
   ONECOM_PASSWORD?: string;
+  OPENAI_APPS_CHALLENGE?: string;
 }

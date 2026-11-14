@@ -1,55 +1,63 @@
 /**
- * Streamable HTTP Transport Handler for /mcp
- * Compliant with MCP 2024-11-05+ JSON-RPC Streamable HTTP Specifications
+ * Streamable HTTP Transport Handler for / and /mcp
+ * Compliant with MCP 2025-11-25 JSON-RPC Streamable HTTP Specifications
  */
 
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { OneMailClient } from '../core/client.js';
-import { MailboxCredentials, WorkerEnv } from '../types.js';
+import {
+  buildOneMcpServerInfo,
+  createOneMcpServer,
+  MCP_ONE_INSTRUCTIONS,
+  MCP_ONE_PROTOCOL_VERSION,
+} from '../mcp/server.js';
+import { WorkerEnv } from '../types.js';
 import { extractCredentialsFromRequest, handleSseConnect } from './sse-handler.js';
 
-const SERVER_INFO = {
-  name: '@xtnd-dynamics/mcp-one',
-  version: '0.1.2',
+const STREAMABLE_CORS_HEADERS: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Expose-Headers': 'MCP-Protocol-Version, Mcp-Session-Id, WWW-Authenticate',
 };
-
-const PROTOCOL_VERSION = '2024-11-05';
 
 export async function handleMcpStreamableHttp(
   request: Request,
   env: WorkerEnv
 ): Promise<Response> {
   const url = new URL(request.url);
+  const origin = url.origin;
 
-  // 1. GET requests: If client requests SSE stream or discovery
+  // 1. GET requests: If client requests SSE stream or capabilities discovery
   if (request.method === 'GET') {
     const accept = request.headers.get('Accept') || '';
     if (accept.includes('text/event-stream')) {
       return handleSseConnect(request, env);
     }
 
-    // Server capabilities discovery response
     return new Response(
       JSON.stringify({
         jsonrpc: '2.0',
         result: {
-          protocolVersion: PROTOCOL_VERSION,
+          protocolVersion: MCP_ONE_PROTOCOL_VERSION,
           capabilities: {
-            tools: { listChanged: false },
-            prompts: { listChanged: false },
+            tools: { listChanged: true },
+            prompts: { listChanged: true },
+            resources: { listChanged: true },
           },
-          serverInfo: SERVER_INFO,
+          serverInfo: buildOneMcpServerInfo(origin),
+          instructions: MCP_ONE_INSTRUCTIONS,
         },
       }),
       {
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
+          ...STREAMABLE_CORS_HEADERS,
+          'MCP-Protocol-Version': MCP_ONE_PROTOCOL_VERSION,
         },
       }
     );
   }
 
-  // 2. POST requests: JSON-RPC request handling
+  // 2. POST requests: JSON-RPC request handling via McpServer
   if (request.method === 'POST') {
     let payload: any;
     try {
@@ -61,216 +69,43 @@ export async function handleMcpStreamableHttp(
           id: null,
           error: { code: -32700, message: 'Parse error: Invalid JSON' },
         }),
-        { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...STREAMABLE_CORS_HEADERS },
+        }
       );
     }
 
-    const { id, method, params } = payload || {};
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      Array.isArray(payload) ||
+      typeof payload.method !== 'string'
+    ) {
+      return new Response(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: payload?.id ?? null,
+          error: { code: -32600, message: 'Invalid Request' },
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json', ...STREAMABLE_CORS_HEADERS },
+        }
+      );
+    }
+
+    const { id, method, params } = payload;
 
     // Notifications return 204
-    if (method === 'notifications/initialized' || method?.startsWith('notifications/')) {
+    if (method === 'notifications/initialized' || method.startsWith('notifications/') || id === undefined) {
       return new Response(null, {
         status: 204,
-        headers: { 'Access-Control-Allow-Origin': '*' },
+        headers: STREAMABLE_CORS_HEADERS,
       });
     }
 
-    // Method: initialize
-    if (method === 'initialize') {
-      return new Response(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          id,
-          result: {
-            protocolVersion: PROTOCOL_VERSION,
-            capabilities: {
-              tools: { listChanged: false },
-              prompts: { listChanged: false },
-              resources: { listChanged: false },
-            },
-            serverInfo: SERVER_INFO,
-            configSchema: {
-              type: 'object',
-              required: ['onecomEmail', 'onecomPassword'],
-              properties: {
-                onecomEmail: {
-                  type: 'string',
-                  title: 'One.com Email Address',
-                  description: 'Your full one.com email address (e.g. user@yourdomain.com)',
-                },
-                onecomPassword: {
-                  type: 'string',
-                  title: 'One.com Mailbox Password',
-                  description: 'Your one.com mailbox password',
-                  format: 'password',
-                },
-              },
-            },
-          },
-        }),
-        { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-      );
-    }
-
-    // Method: ping
-    if (method === 'ping') {
-      return new Response(
-        JSON.stringify({ jsonrpc: '2.0', id, result: {} }),
-        { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-      );
-    }
-
-    // Method: resources/list
-    if (method === 'resources/list' || method === 'resources/templates/list') {
-      return new Response(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          id,
-          result: {
-            resources: [
-              {
-                uri: 'one://folders',
-                name: 'Mailbox Folders',
-                description: 'Live catalog of all mailbox folders with real-time total and unread message counts.',
-                mimeType: 'application/json',
-              },
-              {
-                uri: 'one://status',
-                name: 'Gateway Status',
-                description: 'Connection state and active mailbox capabilities for one.com gateway.',
-                mimeType: 'application/json',
-              },
-              {
-                uri: 'one://templates/meeting-followup',
-                name: 'Meeting Followup Template',
-                description: 'Standard template for professional post-meeting summaries and action items.',
-                mimeType: 'text/markdown',
-              },
-              {
-                uri: 'one://templates/out-of-office',
-                name: 'Out of Office Template',
-                description: 'Standard template for out-of-office auto-responses.',
-                mimeType: 'text/markdown',
-              },
-            ],
-          },
-        }),
-        { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-      );
-    }
-
-    // Method: resources/read
-    if (method === 'resources/read') {
-      const uri = params?.uri;
-      if (uri === 'one://status') {
-        return new Response(
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id,
-            result: {
-              contents: [
-                {
-                  uri: 'one://status',
-                  mimeType: 'application/json',
-                  text: JSON.stringify({
-                    service: '@xtnd-dynamics/mcp-one',
-                    version: '0.1.3',
-                    protocolVersion: '2024-11-05',
-                    imap: { host: 'imap.one.com', port: 993, tls: true },
-                    smtp: { host: 'send.one.com', port: 465, tls: true },
-                    toolsCount: 15,
-                    promptsCount: 4,
-                    resourcesCount: 4,
-                  }),
-                },
-              ],
-            },
-          }),
-          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-        );
-      }
-
-      if (uri === 'one://templates/meeting-followup') {
-        return new Response(
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id,
-            result: {
-              contents: [
-                {
-                  uri: 'one://templates/meeting-followup',
-                  mimeType: 'text/markdown',
-                  text: `# Meeting Summary: [Topic]\n\n**Date:** [Date]\n**Attendees:** [Names]\n\n### Key Discussion Points\n- [Point 1]\n- [Point 2]\n\n### Action Items\n- [ ] **[Owner]**: [Task] (Due: [Date])\n`,
-                },
-              ],
-            },
-          }),
-          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-        );
-      }
-
-      if (uri === 'one://templates/out-of-office') {
-        return new Response(
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id,
-            result: {
-              contents: [
-                {
-                  uri: 'one://templates/out-of-office',
-                  mimeType: 'text/markdown',
-                  text: `Thank you for your message. I am out of the office until [Date]. For urgent inquiries, please contact [Colleague Name].`,
-                },
-              ],
-            },
-          }),
-          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-        );
-      }
-
-      if (uri === 'one://folders') {
-        const credentials = extractCredentialsFromRequest(request, env);
-        if (!credentials.email || !credentials.password) {
-          return new Response(
-            JSON.stringify({
-              jsonrpc: '2.0',
-              id,
-              error: { code: -32602, message: 'Authentication required for dynamic resource one://folders' },
-            }),
-            { status: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-          );
-        }
-        const client = new OneMailClient(credentials);
-        const folders = await client.listFolders();
-        return new Response(
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id,
-            result: {
-              contents: [
-                {
-                  uri: 'one://folders',
-                  mimeType: 'application/json',
-                  text: JSON.stringify({ count: folders.length, folders }, null, 2),
-                },
-              ],
-            },
-          }),
-          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-        );
-      }
-
-      return new Response(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          id,
-          error: { code: -32602, message: `Resource '${uri}' not found` },
-        }),
-        { status: 404, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-      );
-    }
-
-    // Method: ai.smithery/events/list or triggers/list
+    // Smithery registry inspection methods
     if (method === 'ai.smithery/events/list' || method === 'events/list' || method === 'triggers/list') {
       return new Response(
         JSON.stringify({
@@ -278,370 +113,117 @@ export async function handleMcpStreamableHttp(
           id,
           result: { events: [], triggers: [] },
         }),
-        { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+        {
+          headers: { 'Content-Type': 'application/json', ...STREAMABLE_CORS_HEADERS },
+        }
       );
     }
 
-    // Method: tools/list
-    if (method === 'tools/list') {
-      const tools = getToolDefinitions();
-      return new Response(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          id,
-          result: { tools },
-        }),
-        { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-      );
-    }
-
-    // Method: prompts/list
-    if (method === 'prompts/list') {
-      return new Response(
-        JSON.stringify({
-          jsonrpc: '2.0',
-          id,
-          result: {
-            prompts: [
-              {
-                name: 'triage-inbox',
-                description: 'Inspect recent unread emails, prioritize into categories, and recommend triage actions.',
-                arguments: [
-                  {
-                    name: 'limit',
-                    description: 'Maximum number of unread emails to inspect (default: 10)',
-                    required: false,
-                  },
-                ],
-              },
-              {
-                name: 'draft-reply',
-                description: 'Analyze an email thread and draft a professional, contextual reply.',
-                arguments: [
-                  {
-                    name: 'uid',
-                    description: 'The UID of the email to reply to',
-                    required: true,
-                  },
-                  {
-                    name: 'tone',
-                    description: 'Tone of the reply: professional, friendly, concise, assertive (default: professional)',
-                    required: false,
-                  },
-                ],
-              },
-              {
-                name: 'clean-inbox',
-                description: 'Detect marketing newsletters, automated alerts, and clutter, offering bulk cleanup actions.',
-                arguments: [
-                  {
-                    name: 'folder',
-                    description: 'Folder to scan (default: INBOX)',
-                    required: false,
-                  },
-                ],
-              },
-              {
-                name: 'executive-briefing',
-                description: 'Generate a high-density executive summary of all emails received today with action item tracker.',
-                arguments: [],
-              },
-            ],
-          },
-        }),
-        { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-      );
-    }
-
-    // Method: tools/call
-    if (method === 'tools/call') {
-      const toolName = params?.name;
-      const toolArgs = params?.arguments || {};
-
+    // Dynamic resource credential gate for one://folders
+    if (method === 'resources/read' && params?.uri === 'one://folders') {
       const credentials = extractCredentialsFromRequest(request, env);
       if (!credentials.email || !credentials.password) {
         return new Response(
           JSON.stringify({
             jsonrpc: '2.0',
             id,
-            result: {
-              content: [
-                {
-                  type: 'text',
-                  text: 'Error: Missing mailbox credentials. Pass X-OneCom-Email and X-OneCom-Password headers.',
-                },
-              ],
-              isError: true,
+            error: {
+              code: -32602,
+              message: 'Authentication required for dynamic resource one://folders',
             },
           }),
-          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-        );
-      }
-
-      const client = new OneMailClient(credentials);
-      try {
-        const result = await executeTool(client, toolName, toolArgs);
-        return new Response(
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id,
-            result: {
-              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
-              isError: false,
-            },
-          }),
-          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-        );
-      } catch (err: any) {
-        return new Response(
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id,
-            result: {
-              content: [{ type: 'text', text: `Tool Error: ${err.message}` }],
-              isError: true,
-            },
-          }),
-          { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
+          {
+            status: 401,
+            headers: { 'Content-Type': 'application/json', ...STREAMABLE_CORS_HEADERS },
+          }
         );
       }
     }
 
-    // Unknown method
-    return new Response(
-      JSON.stringify({
-        jsonrpc: '2.0',
-        id,
-        error: { code: -32601, message: `Method '${method}' not found` },
-      }),
-      { status: 404, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }
-    );
+    const getClient = () => {
+      const credentials = extractCredentialsFromRequest(request, env);
+      if (!credentials.email || !credentials.password) {
+        throw new Error(
+          'Missing mailbox credentials. Pass X-OneCom-Email and X-OneCom-Password headers.'
+        );
+      }
+      return new OneMailClient(credentials);
+    };
+
+    const server = createOneMcpServer(getClient, { origin: new URL(request.url).origin });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const hasNullId = id === null;
+    const transportId = hasNullId ? '__null_id__' : id;
+
+    const normalizedRequest =
+      method === 'initialize'
+        ? {
+            jsonrpc: '2.0' as const,
+            id: transportId,
+            method: 'initialize',
+            params: {
+              protocolVersion:
+                typeof params?.protocolVersion === 'string'
+                  ? params.protocolVersion
+                  : MCP_ONE_PROTOCOL_VERSION,
+              capabilities:
+                params?.capabilities && typeof params.capabilities === 'object'
+                  ? params.capabilities
+                  : {},
+              clientInfo:
+                params?.clientInfo &&
+                typeof params.clientInfo === 'object' &&
+                typeof params.clientInfo.name === 'string' &&
+                typeof params.clientInfo.version === 'string'
+                  ? params.clientInfo
+                  : { name: 'mcp-client', version: '0.0.0' },
+            },
+          }
+        : {
+            jsonrpc: '2.0' as const,
+            id: transportId,
+            method,
+            ...(params !== undefined ? { params } : {}),
+          };
+
+    await server.connect(serverTransport);
+    await clientTransport.start();
+
+    try {
+      const responseMessage = await new Promise<any>((resolve, reject) => {
+        clientTransport.onmessage = (msg: any) => {
+          if (msg && 'id' in msg && msg.id === transportId) {
+            resolve(msg);
+          }
+        };
+        clientTransport.onerror = (err) => reject(err);
+        clientTransport.send(normalizedRequest as any).catch(reject);
+      });
+
+      if (hasNullId) {
+        responseMessage.id = null;
+      }
+
+      const negotiatedProtocolVersion =
+        method === 'initialize' && typeof responseMessage?.result?.protocolVersion === 'string'
+          ? responseMessage.result.protocolVersion
+          : request.headers.get('MCP-Protocol-Version') || MCP_ONE_PROTOCOL_VERSION;
+
+      return new Response(JSON.stringify(responseMessage), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          ...STREAMABLE_CORS_HEADERS,
+          'MCP-Protocol-Version': negotiatedProtocolVersion,
+        },
+      });
+    } finally {
+      await server.close();
+    }
   }
 
   return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
     status: 405,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...STREAMABLE_CORS_HEADERS },
   });
-}
-
-function getToolDefinitions() {
-  return [
-    {
-      name: 'list_folders',
-      description: 'List all mailboxes/folders in the one.com mail account with message and unread counts.',
-      inputSchema: { type: 'object', properties: {} },
-    },
-    {
-      name: 'create_folder',
-      description: 'Create a new folder or mailbox in the one.com mail account.',
-      inputSchema: {
-        type: 'object',
-        properties: { name: { type: 'string', description: 'Folder name to create' } },
-        required: ['name'],
-      },
-    },
-    {
-      name: 'rename_folder',
-      description: 'Rename an existing mailbox/folder.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          oldName: { type: 'string', description: 'Current folder name' },
-          newName: { type: 'string', description: 'New folder name' },
-        },
-        required: ['oldName', 'newName'],
-      },
-    },
-    {
-      name: 'delete_folder',
-      description: 'Delete a folder/mailbox from the one.com mail account.',
-      inputSchema: {
-        type: 'object',
-        properties: { name: { type: 'string', description: 'Folder name to delete' } },
-        required: ['name'],
-      },
-    },
-    {
-      name: 'search_emails',
-      description: 'Search for emails in one.com mailbox using filters (query, folder, sender, recipient, flags).',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          folder: { type: 'string', default: 'INBOX' },
-          query: { type: 'string' },
-          from: { type: 'string' },
-          to: { type: 'string' },
-          subject: { type: 'string' },
-          unreadOnly: { type: 'boolean' },
-          limit: { type: 'number', default: 20 },
-        },
-      },
-    },
-    {
-      name: 'get_recent_emails',
-      description: 'Retrieve the most recent emails from a mailbox folder with envelopes.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          folder: { type: 'string', default: 'INBOX' },
-          limit: { type: 'number', default: 10 },
-        },
-      },
-    },
-    {
-      name: 'get_email_content',
-      description: 'Fetch full email content by UID from a folder. Body is converted to clean Markdown.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          folder: { type: 'string', default: 'INBOX' },
-          uid: { type: 'number' },
-        },
-        required: ['folder', 'uid'],
-      },
-    },
-    {
-      name: 'get_email_thread',
-      description: 'Retrieve the full conversation thread for a given email UID or Message-ID.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          folder: { type: 'string', default: 'INBOX' },
-          uidOrMessageId: { type: 'string' },
-        },
-        required: ['folder', 'uidOrMessageId'],
-      },
-    },
-    {
-      name: 'mark_emails',
-      description: 'Mark emails as read, unread, flagged, or unflagged.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          folder: { type: 'string', default: 'INBOX' },
-          uids: { type: 'array', items: { type: 'number' } },
-          action: { type: 'string', enum: ['read', 'unread', 'flag', 'unflag'] },
-        },
-        required: ['folder', 'uids', 'action'],
-      },
-    },
-    {
-      name: 'move_emails',
-      description: 'Move emails from a source folder to a destination folder.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          sourceFolder: { type: 'string', default: 'INBOX' },
-          targetFolder: { type: 'string' },
-          uids: { type: 'array', items: { type: 'number' } },
-        },
-        required: ['sourceFolder', 'targetFolder', 'uids'],
-      },
-    },
-    {
-      name: 'delete_emails',
-      description: 'Delete emails by moving them to Trash (soft delete) or permanent expunge.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          folder: { type: 'string', default: 'INBOX' },
-          uids: { type: 'array', items: { type: 'number' } },
-          permanent: { type: 'boolean', default: false },
-        },
-        required: ['folder', 'uids'],
-      },
-    },
-    {
-      name: 'send_email',
-      description: 'Send a new outbound email via one.com SMTP server (send.one.com:465).',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          to: { type: 'string' },
-          subject: { type: 'string' },
-          bodyText: { type: 'string' },
-          bodyHtml: { type: 'string' },
-        },
-        required: ['to', 'subject', 'bodyText'],
-      },
-    },
-    {
-      name: 'reply_email',
-      description: 'Reply to an existing email with automated In-Reply-To and References headers.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          folder: { type: 'string', default: 'INBOX' },
-          uid: { type: 'number' },
-          bodyText: { type: 'string' },
-          replyAll: { type: 'boolean', default: false },
-        },
-        required: ['folder', 'uid', 'bodyText'],
-      },
-    },
-    {
-      name: 'forward_email',
-      description: 'Forward an existing email to new recipients with original header context.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          folder: { type: 'string', default: 'INBOX' },
-          uid: { type: 'number' },
-          to: { type: 'string' },
-          comment: { type: 'string' },
-        },
-        required: ['folder', 'uid', 'to'],
-      },
-    },
-    {
-      name: 'create_draft',
-      description: 'Create an email draft in the one.com Drafts folder without sending.',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          to: { type: 'string' },
-          subject: { type: 'string' },
-          bodyText: { type: 'string' },
-        },
-        required: ['to', 'subject', 'bodyText'],
-      },
-    },
-  ];
-}
-
-async function executeTool(client: OneMailClient, name: string, args: any): Promise<any> {
-  switch (name) {
-    case 'list_folders':
-      return { folders: await client.listFolders() };
-    case 'create_folder':
-      return { success: await client.createFolder(args.name) };
-    case 'rename_folder':
-      return { success: await client.renameFolder(args.oldName, args.newName) };
-    case 'delete_folder':
-      return { success: await client.deleteFolder(args.name) };
-    case 'search_emails':
-      return await client.searchEmails(args);
-    case 'get_recent_emails':
-      return await client.getRecentEmails(args.folder || 'INBOX', args.limit || 10);
-    case 'get_email_content':
-      return await client.getEmailContent(args.folder || 'INBOX', args.uid);
-    case 'get_email_thread':
-      return { thread: await client.getEmailThread(args.folder || 'INBOX', args.uidOrMessageId) };
-    case 'mark_emails':
-      return { success: await client.markEmails(args.folder || 'INBOX', args.uids, args.action) };
-    case 'move_emails':
-      return { success: await client.moveEmails(args.sourceFolder || 'INBOX', args.targetFolder, args.uids) };
-    case 'delete_emails':
-      return { success: await client.deleteEmails(args.folder || 'INBOX', args.uids, args.permanent || false) };
-    case 'send_email':
-      return await client.sendEmail(args);
-    case 'reply_email':
-      return await client.replyEmail(args.folder || 'INBOX', args.uid, args.bodyText, args.bodyHtml, args.replyAll);
-    case 'forward_email':
-      return await client.forwardEmail(args.folder || 'INBOX', args.uid, args.to, args.comment);
-    case 'create_draft':
-      return await client.createDraft(args);
-    default:
-      throw new Error(`Unknown tool name: ${name}`);
-  }
 }
