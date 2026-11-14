@@ -77,7 +77,7 @@ export async function handleSseConnect(
   }
 
   const getClient = () => new OneMailClient(credentials);
-  const server = createOneMcpServer(getClient);
+  const server = createOneMcpServer(getClient, { origin: url.origin });
 
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();

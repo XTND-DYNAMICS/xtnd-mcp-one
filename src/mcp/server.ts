@@ -1,21 +1,46 @@
 /**
  * Supreme MCP Server Factory for @xtnd-dynamics/mcp-one
- * Implements Tools (15), Prompts (4), and Resources (4) per MCP 2024-11-05+ Specs
+ * Implements Tools (15), Prompts (4), and Resources (4) per MCP 2025-11-25 Specs
  */
 
-import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { OneMailClient } from '../core/client.js';
-import { registerFolderTools } from './tools/folders.js';
-import { registerSearchTools } from './tools/search.js';
-import { registerReadTools } from './tools/read.js';
-import { registerTriageTools } from './tools/triage.js';
-import { registerOutboundTools } from './tools/outbound.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { OneMailClient } from '../core/client.js';
+import { brandIconsForOrigin } from '../worker/brand-icons.js';
+import { registerFolderTools } from './tools/folders.js';
+import { registerOutboundTools } from './tools/outbound.js';
+import { registerReadTools } from './tools/read.js';
+import { registerSearchTools } from './tools/search.js';
+import { registerTriageTools } from './tools/triage.js';
 
-export function createOneMcpServer(getClient: () => OneMailClient): McpServer {
-  const server = new McpServer({
-    name: '@xtnd-dynamics/mcp-one',
-    version: '0.1.3',
+export const MCP_ONE_NAME = '@xtnd-dynamics/mcp-one';
+export const MCP_ONE_TITLE = 'XTND | MCP | ONE';
+export const MCP_ONE_VERSION = '0.1.7';
+export const MCP_ONE_WEBSITE_URL = 'https://one.mcp.xgi.io';
+export const MCP_ONE_PROTOCOL_VERSION = '2025-11-25';
+export const MCP_ONE_INSTRUCTIONS =
+  'Prefer saving drafts via create_draft unless the user explicitly asks to send immediately via send_email, reply_email, or forward_email. Confirm permanent expunge before calling delete_emails with permanent=true.';
+
+export interface OneMcpServerOptions {
+  origin?: string;
+}
+
+export function buildOneMcpServerInfo(origin?: string) {
+  return {
+    name: MCP_ONE_NAME,
+    title: MCP_ONE_TITLE,
+    version: MCP_ONE_VERSION,
+    websiteUrl: MCP_ONE_WEBSITE_URL,
+    icons: brandIconsForOrigin(origin || MCP_ONE_WEBSITE_URL),
+  };
+}
+
+export function createOneMcpServer(
+  getClient: () => OneMailClient,
+  options?: OneMcpServerOptions
+): McpServer {
+  const server = new McpServer(buildOneMcpServerInfo(options?.origin), {
+    instructions: MCP_ONE_INSTRUCTIONS,
   });
 
   // 1. Register all 15 Core Tools
@@ -75,9 +100,10 @@ export function createOneMcpServer(getClient: () => OneMailClient): McpServer {
             mimeType: 'application/json',
             text: JSON.stringify(
               {
-                service: '@xtnd-dynamics/mcp-one',
-                version: '0.1.3',
-                protocolVersion: '2024-11-05',
+                service: MCP_ONE_NAME,
+                title: MCP_ONE_TITLE,
+                version: MCP_ONE_VERSION,
+                protocolVersion: MCP_ONE_PROTOCOL_VERSION,
                 imap: { host: 'imap.one.com', port: 993, tls: true },
                 smtp: { host: 'send.one.com', port: 465, tls: true },
                 toolsCount: 15,

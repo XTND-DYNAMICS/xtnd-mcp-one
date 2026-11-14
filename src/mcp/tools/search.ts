@@ -6,11 +6,21 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { OneMailClient } from '../../core/client.js';
 import { GetRecentEmailsSchema, SearchEmailsSchema } from '../schemas.js';
 
+const READ_ONLY_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: true,
+} as const;
+
 export function registerSearchTools(server: McpServer, getClient: () => OneMailClient) {
-  server.tool(
+  server.registerTool(
     'search_emails',
-    'Search for emails in one.com mailbox using filters (query, from, to, subject, date range, unread/flagged flags).',
-    SearchEmailsSchema.shape,
+    {
+      description: 'Search for emails in one.com mailbox using filters (query, from, to, subject, date range, unread/flagged flags).',
+      inputSchema: SearchEmailsSchema.shape,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
     async (args) => {
       try {
         const client = getClient();
@@ -32,10 +42,13 @@ export function registerSearchTools(server: McpServer, getClient: () => OneMailC
     }
   );
 
-  server.tool(
+  server.registerTool(
     'get_recent_emails',
-    'Retrieve the most recent emails from a mailbox folder with envelope headers and unread status.',
-    GetRecentEmailsSchema.shape,
+    {
+      description: 'Retrieve the most recent emails from a mailbox folder with envelope headers and unread status.',
+      inputSchema: GetRecentEmailsSchema.shape,
+      annotations: READ_ONLY_ANNOTATIONS,
+    },
     async (args) => {
       try {
         const client = getClient();
